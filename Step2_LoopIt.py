@@ -21,7 +21,6 @@ win = visual.Window(fullscr=True, allowGUI=False, color='white', unit='height')
 # but you can find examples in the tutorial code 
 #trialClock = core.Clock()
 
-
 #%% your loop here
 # start by copying your one trial here, then identify what needs to be
 # changed on every trial.  Likely your stimuli, but you might want to change a few things
