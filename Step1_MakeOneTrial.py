@@ -45,7 +45,7 @@ fric=.5 # higher = less friction.
 #loop stuff
 frame_all=0
 frame_track=0
-frames_per_trial=400
+frames_per_track=400
 trial=str(1)
 #start object physics
 c1_xpos=0
@@ -75,8 +75,8 @@ current_fps=[0]
 
 #mouse tracking per trial
 mouse.clickReset()
-mouse_pos=[[[0],[0],[0]]]
-stim_pos=[[[0],[0],[0]]]
+mouse_pos=[[0,0,0]]
+stim_pos=[[0,0,0]]
 
 ## Track
 while 1:
@@ -85,16 +85,16 @@ while 1:
         frame_all+=1
         if current_time<=1:
             mouse.setPos([0,0])
-            mouse_pos.append([[frame_all],[mouse.getPos()[0]],[mouse.getPos()[1]]])
-            stim_pos.append([[frame_all],[c1_xpos],[c1_ypos]])
+            mouse_pos.append([frame_all,mouse.getPos()[0],mouse.getPos()[1]])
+            stim_pos.append([frame_all,c1_xpos,c1_ypos])
         else:
-            mouse_pos.append([[frame_all],[mouse.getPos()[0]],[mouse.getPos()[1]]])
-            stim_pos.append([[frame_all],[c1_xpos],[c1_ypos]])
+            mouse_pos.append([frame_all,mouse.getPos()[0],mouse.getPos()[1]])
+            stim_pos.append([frame_all,c1_xpos,c1_ypos])
             if frame_track==0:
                 frame_track_start=frame_all
                 time_track_start=trialClock.getTime()
             frame_track+=1
-            if frame_track > frames_per_trial:
+            if frame_track > frames_per_track:
                 break
             # modulate acceleration towards center by distance from center
             c1_xacc=c1_xacc+(random.randint(-acclmt,acclmt)*acc_multiplier)+(-c1_xpos*opp_acc_multiplier)
@@ -138,16 +138,16 @@ while 1:
         current_fps=round(frame_track/current_time,3)
         text_fps=psychopy.visual.TextStim(win=win,
             name='text',text='fps'+str(current_fps),pos=(.5,.42),
-            color='white',height=.04)
+            color='white',height=.02)
         text_frame=psychopy.visual.TextStim(win=win,
             name='text',text='frame'+str(frame_all),pos=(.5,.38),
-            color='white',height=.04)
+            color='white',height=.02)
         text_stim_pos=psychopy.visual.TextStim(win=win,
-            name='text',text='stim_pos'+str(round(stim_pos[frame_all],3)),pos=(.5,.34),
-            color='white',height=.04)
+            name='text',text='stim_pos'+str(stim_pos[frame_all]),pos=(.5,.34),
+            color='white',height=.02)
         text_mouse_pos=psychopy.visual.TextStim(win=win,
-            name='text',text='stim_pos'+str(round(mouse_pos[frame_all],3)),pos=(.5,.30),
-            color='white',height=.04)
+            name='text',text='stim_pos'+str(mouse_pos[frame_all]),pos=(.5,.30),
+            color='white',height=.02)
         # then draw all stimuli
         #fixation.draw()
         circle.draw()
@@ -164,7 +164,6 @@ while 1:
 #fixation=psychopy.visual.Circle(win=win,pos=(0,0),color='white',radius=.01,edges=12)
 # then draw all stimuli
 #fixation.draw()
-circle.draw()
 text.draw()
 text_fps.draw()
 text_frame.draw()
@@ -182,34 +181,31 @@ while 1:
     current_time_2= performanceClock.getTime()
     if current_time_2%.04 < .01:
         frame_2+=1
-        # stim pos and mouse pos 
+        if frame_2 >= frames_per_track:
+            break
+        # stim pos and mouse pos
         circle_2=psychopy.visual.Circle(win=win,pos=(stim_pos[frame_2][1],stim_pos[frame_2][2]),color='white',radius=c1_rad,edges=15)
-        circle_3=psychopy.visual.Circle(win=win,pos=(mouse_pos[frame_2][1],mouse_pos[frame_2][2]),color='white',radius=c1_rad,edges=3)
+        circle_3=psychopy.visual.Circle(win=win,pos=(mouse_pos[frame_2][1],mouse_pos[frame_2][2]),color='black',radius=c1_rad/3,edges=3)
         # fps & trial details text
+        text_frame=psychopy.visual.TextStim(win=win,
+            name='text',text='frame'+str(frame_2),pos=(.5,.38),
+            color='white',height=.02)
         text_stim_pos=psychopy.visual.TextStim(win=win,
-            name='text',text='stim_pos'+str(round(stim_pos[frame_all],3)),pos=(.5,.34),
-            color='white',height=.04)
+            name='text',text='stim_pos'+str(stim_pos[frame_2]),pos=(.5,.34),
+            color='white',height=.02)
         text_mouse_pos=psychopy.visual.TextStim(win=win,
-            name='text',text='stim_pos'+str(round(mouse_pos[frame_all],3)),pos=(.5,.30),
-            color='white',height=.04)
+            name='text',text='stim_pos'+str(mouse_pos[frame_2]),pos=(.5,.30),
+            color='white',height=.02)
         # then draw all stimuli
+        text.draw()
         circle_2.draw()
         circle_3.draw()
+        text_frame.draw()
         text_stim_pos.draw()
         text_mouse_pos.draw()
         # then flip your window
         win.flip()
-        
-## Performance RI
-    # draw stims
-    circle_2.draw()
-    circle_3.draw()
-    text_stim_pos.draw()
-    text_mouse_pos.draw()
-    # flip window
-    win.flip()
-    core.wait(1)
-    
+
 #%% Required clean up
 # this cell will make sure that your window displays for a while and then 
 # closes properly
