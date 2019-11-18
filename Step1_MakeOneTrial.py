@@ -49,7 +49,7 @@ win = psychopy.visual.Window(size=[screen_x,screen_y],fullscr=False, allowGUI=Tr
 #%% Experiment Parameters
 #block and trial settings
 numblocks=1
-numtrialsperblock=10
+numtrialsperblock=4
 #mouse tracking
 mouse = event.Mouse(visible = True,win=win)
 #object parameters
@@ -235,3 +235,20 @@ for block in range(numblocks):
 # closes properly
 core.wait(1)
 win.close()
+
+#%% your loop here
+# start by copying your one trial here, then identify what needs to be
+# changed on every trial.  Likely your stimuli, but you might want to change a few things
+
+
+# make a list or a pd.DataFrame that contains trial-specific info (stimulus, etc)
+# e.g. stim = ['1.jpg','2.jpg','3.jpg']
+
+    # include your trial code in your loop but replace anything that should 
+    # change on each trial with a variable that uses your iterater
+    # e.g. thisStimName = stim[t]
+    #      thisStim = visual.ImageStim(win, image=thisStimName ...)
+    
+    # if you're recording responses, be sure to store your responses in a list
+    # or DataFrame which also uses your iterater!
+
