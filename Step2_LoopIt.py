@@ -17,6 +17,11 @@ import psychopy
 from psychopy import visual, core, event, gui, logging
 import random
 
+########################
+#### Quick Settings ####
+########################
+debug = 1 #Debug mode on (1) or off (0).
+
 # open a white full screen window
 screen_x=600
 screen_y=600
@@ -50,6 +55,7 @@ win = psychopy.visual.Window(size=[screen_x,screen_y],fullscr=False, allowGUI=Tr
 #block and trial settings
 numblocks=1
 numtrialsperblock=4
+frames_per_track=200
 #mouse tracking
 mouse = event.Mouse(visible = True,win=win)
 #object parameters
@@ -64,6 +70,7 @@ fric=.5 # higher = less friction. Used for wall-bounce only.
 
 #%% Block Start
 for block in range(numblocks):
+    current_block = block+1
     blocktext=psychopy.visual.TextStim(win=win,
                         name='text',text='block'+str(block),pos=(.5,.46),
                         color='white',height=.04)
@@ -71,12 +78,12 @@ for block in range(numblocks):
     core.wait(1)
     #%% Trial Start
     for trial in range(numtrialsperblock):
+        current_trial = trial+1
         #clock start
         trialClock = core.Clock()
         #loop stuff
         frame_all=0
         frame_track=0
-        frames_per_track=400
         #start object physics
         c1_xpos=0
         c1_ypos=0
@@ -112,7 +119,11 @@ for block in range(numblocks):
                     mouse_pos.append([frame_all,mouse.getPos()[0],mouse.getPos()[1]])
                     stim_pos.append([frame_all,c1_xpos,c1_ypos])
                 else:
-                    mouse_pos.append([frame_all,mouse.getPos()[0],mouse.getPos()[1]])
+                    if debug == 1:
+                        mouse_pos.append([frame_all,(random.randint(0,100)-50)/100,(random.randint(0,100)-50)/100])
+                    else:
+                        mouse_pos.append([frame_all,mouse.getPos()[0],mouse.getPos()[1]])
+                    
                     stim_pos.append([frame_all,c1_xpos,c1_ypos])
                     if frame_track==0:
                         frame_track_start=frame_all
@@ -227,9 +238,19 @@ for block in range(numblocks):
                 text_mouse_pos.draw()
                 # then flip your window
                 win.flip()
-        #%% Save data
+        #%% Save data WIP!!!
+        if current_trial == 1:
+            block_data = [current_block]
+            trial_data = [current_trial]
+            stim_pos_data = [[current_block, current_trial, stim_pos]]
+            mouse_pos_data = [[current_block, current_trial, mouse_pos]]
+        else:
+            block_data.append(current_block)
+            trial_data.append(current_trial)
+            stim_pos_data.append([current_block, current_trial, stim_pos])
+            mouse_pos_data.append([current_block, current_trial, mouse_pos])
         # WIP
-
+        
 #%% Required clean up
 # this cell will make sure that your window displays for a while and then 
 # closes properly
