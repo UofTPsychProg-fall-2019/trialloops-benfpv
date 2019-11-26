@@ -9,6 +9,7 @@ Use this template script to present one trial with your desired structure
 # this imports everything you might need and opens a full screen window
 # when you are developing your script you might want to make a smaller window 
 # so that you can still see your console 
+
 import numpy as np
 import pandas as pd
 import os #, sys
@@ -20,11 +21,17 @@ import random
 ########################
 #### Quick Settings ####
 ########################
-debug = 1 #Debug mode on (1) or off (0).
+debug=0 #Debug mode on (1) or off (0).
+debug_fps=1
 
 # open a white full screen window
 screen_x=600
 screen_y=600
+framerate=15
+
+time_per_frame=1/framerate
+time_per_frame_precision=time_per_frame/4
+
 win = psychopy.visual.Window(size=[screen_x,screen_y],fullscr=False, allowGUI=True, color=[0,0,0], units='height')
 
 # uncomment if you use a clock. Optional because we didn't cover timing this week, 
@@ -54,10 +61,10 @@ win = psychopy.visual.Window(size=[screen_x,screen_y],fullscr=False, allowGUI=Tr
 #%% Experiment Parameters
 #block and trial settings
 numblocks=1
-numtrialsperblock=4
+numtrialsperblock=2
 frames_per_track=200
 #mouse tracking
-mouse = event.Mouse(visible = True,win=win)
+mouse = event.Mouse(visible=False,win=win)
 #object parameters
 c1_rad=.02
 #physical limits
@@ -78,9 +85,8 @@ for block in range(numblocks):
     core.wait(1)
     #%% Trial Start
     for trial in range(numtrialsperblock):
-        current_trial = trial+1
-        #clock start
-        trialClock = core.Clock()
+        # current_trial
+        current_trial=trial+1
         #loop stuff
         frame_all=0
         frame_track=0
@@ -92,45 +98,52 @@ for block in range(numblocks):
         #trail drawing
         trail=[0]
         current_fps=[0]
+        #durations/timing/randomized times
+        current_cue_dur=random.randint(1000,2500)/1000
+        current_track_dur=random.randint(5000,10000)/1000
+        current_ri_dur=random.randint(1000,1000)/1000
         #mouse tracking per trial
         mouse.clickReset()
-        mouse_pos=[[0,0,0]]
         stim_pos=[[0,0,0]]
+        mouse_pos=[[0,0,0]]
+        #clock start
+        trialClock=core.Clock()
         #%% Cue
         #fixation
-        fixation=psychopy.visual.Circle(win=win,pos=(0,0),color='white',radius=.01,edges=12)
-        circle=psychopy.visual.Circle(win=win,pos=(c1_xpos,c1_ypos),color='white',radius=c1_rad,edges=4)
+        #fixation=psychopy.visual.Circle(win=win,pos=(0,0),color='white',radius=.01,edges=12)
+        tgtcircle=psychopy.visual.Circle(win=win,pos=(c1_xpos,c1_ypos),color='white',radius=c1_rad,edges=14)
         text=psychopy.visual.TextStim(win=win,
                     name='text',text='trial'+str(trial),pos=(.5,.46),
                     color='white',height=.04)
         # then draw all stimuli
         #fixation.draw()
-        circle.draw()
+        tgtcircle.draw()
         text.draw()
         # then flip your window
         win.flip()
+        # cue start time
+        time_cue_start=trialClock.getTime()
         #%% Track
         while 1:
-            current_time= trialClock.getTime()
-            if current_time%.04 < .01:
+            current_time=trialClock.getTime()
+            # framerate set here... time%.004<.001
+            if current_time%time_per_frame<time_per_frame_precision:
                 frame_all+=1
-                if current_time<=1:
+                if current_time<=current_cue_dur:
                     mouse.setPos([0,0])
-                    mouse_pos.append([frame_all,mouse.getPos()[0],mouse.getPos()[1]])
-                    stim_pos.append([frame_all,c1_xpos,c1_ypos])
                 else:
-                    if debug == 1:
-                        mouse_pos.append([frame_all,(random.randint(0,100)-50)/100,(random.randint(0,100)-50)/100])
-                    else:
-                        mouse_pos.append([frame_all,mouse.getPos()[0],mouse.getPos()[1]])
-                    
-                    stim_pos.append([frame_all,c1_xpos,c1_ypos])
-                    if frame_track==0:
-                        frame_track_start=frame_all
-                        time_track_start=trialClock.getTime()
-                    frame_track+=1
-                    if frame_track > frames_per_track:
+                    # end trial if >current_track_dur
+                    if current_time>=current_track_dur:
+                        frame_track_end=frame_track
+                        time_track_end=current_time
                         break
+                    # frame_track
+                    frame_track+=1
+                    # frame_track conditions
+                    if frame_track==1:
+                        time_track_start=trialClock.getTime()
+                    stim_pos.append([frame_track,c1_xpos,c1_ypos])
+                    mouse_pos.append([frame_track,mouse.getPos()[0],mouse.getPos()[1]])
                     # modulate acceleration towards center by distance from center
                     c1_xacc=c1_xacc+(random.randint(-acclmt,acclmt)*acc_multiplier)+(-c1_xpos*opp_acc_multiplier)
                     c1_yacc=c1_yacc+(random.randint(-acclmt,acclmt)*acc_multiplier)+(-c1_ypos*opp_acc_multiplier)
@@ -160,37 +173,47 @@ for block in range(numblocks):
                         c1_yacc=-c1_yacc*fric
                     # maybe start by making stimulus objects (e.g. myPic = visual.ImageStim(...))  
                     #fixation=psychopy.visual.Circle(win=win,pos=(0,0),color='white',radius=.01,edges=12)
-                    circle=psychopy.visual.Circle(win=win,pos=(c1_xpos,c1_ypos),color='white',radius=c1_rad,edges=15)
-                    text=psychopy.visual.TextStim(win=win,
-                        name='text',text='trial'+str(trial),pos=(.5,.46),
-                        color='white',height=.04)
+                    if debug==1:
+                        text=psychopy.visual.TextStim(win=win,
+                            name='text',text='trial'+str(trial),pos=(.5,.46),
+                            color='white',height=.04)
                     # draw the trail
-                    trail.append(psychopy.visual.Circle(win=win,pos=(c1_xpos,c1_ypos),color='white',radius=c1_rad/6,edges=3))
-                    for current_frame in range(frame_track):
-                        if current_frame%3 == 0:
-                            trail[current_frame+1].draw()
+                    if trail==1:
+                        trail.append(psychopy.visual.Circle(win=win,pos=(c1_xpos,c1_ypos),color='white',radius=c1_rad/6,edges=3))
+                        for current_frame in range(frame_track):
+                            if current_frame%5 == 0:
+                                trail[current_frame+1].draw()
+                    # position text
+                    if debug==1:
+                        text_stim_pos=psychopy.visual.TextStim(win=win,
+                            name='text',text='stim_pos'+str(stim_pos[frame_track]),pos=(.5,.34),
+                            color='white',height=.02)
+                        text_mouse_pos=psychopy.visual.TextStim(win=win,
+                            name='text',text='mouse_pos'+str(mouse_pos[frame_track]),pos=(.5,.30),
+                            color='white',height=.02)
+                # moving stims
+                tgtcircle=psychopy.visual.Circle(win=win,pos=(c1_xpos,c1_ypos),color='white',radius=c1_rad,edges=14)
+                mousecircle=psychopy.visual.Circle(win=win,pos=(mouse.getPos()[0],mouse.getPos()[1]),color='black',radius=c1_rad/3,edges=14)
                 # fps & trial details text
-                current_fps=round(frame_track/current_time,3)
-                text_fps=psychopy.visual.TextStim(win=win,
-                    name='text',text='fps'+str(current_fps),pos=(.5,.42),
-                    color='white',height=.02)
-                text_frame=psychopy.visual.TextStim(win=win,
-                    name='text',text='frame'+str(frame_all),pos=(.5,.38),
-                    color='white',height=.02)
-                text_stim_pos=psychopy.visual.TextStim(win=win,
-                    name='text',text='stim_pos'+str(stim_pos[frame_all]),pos=(.5,.34),
-                    color='white',height=.02)
-                text_mouse_pos=psychopy.visual.TextStim(win=win,
-                    name='text',text='mouse_pos'+str(mouse_pos[frame_all]),pos=(.5,.30),
-                    color='white',height=.02)
+                if debug_fps==1:
+                    current_fps=round(frame_track/current_time,2)
+                    text_fps=psychopy.visual.TextStim(win=win,
+                        name='text',text='fps'+str(current_fps),pos=(.5,.42),
+                        color='white',height=.02)
+                    text_frame=psychopy.visual.TextStim(win=win,
+                        name='text',text='frame'+str(frame_track),pos=(.5,.38),
+                        color='white',height=.02)
                 # then draw all stimuli
                 #fixation.draw()
-                circle.draw()
-                text.draw()
-                text_fps.draw()
-                text_frame.draw()
-                text_stim_pos.draw()
-                text_mouse_pos.draw()
+                tgtcircle.draw()
+                mousecircle.draw()
+                if debug==1:
+                    text.draw()
+                    text_stim_pos.draw()
+                    text_mouse_pos.draw()
+                if debug_fps==1:
+                    text_fps.draw()
+                    text_frame.draw()
                 # then flip your window
                 win.flip()
                 # then record your responses
@@ -198,27 +221,29 @@ for block in range(numblocks):
         #fixation=psychopy.visual.Circle(win=win,pos=(0,0),color='white',radius=.01,edges=12)
         # then draw all stimuli
         #fixation.draw()
-        text.draw()
-        text_fps.draw()
-        text_frame.draw()
-        text_stim_pos.draw()
-        text_mouse_pos.draw()
+        if debug==1:
+            text.draw()
+            text_stim_pos.draw()
+            text_mouse_pos.draw()
+        if debug_fps==1:
+            text_fps.draw()
+            text_frame.draw()
         # then flip your window
         win.flip()
-        core.wait(1)
+        core.wait(current_ri_dur)
         ## Performance View
         performanceClock=core.Clock()
-        frame_2=0
+        frame_2=-1
         #%% Playback
         while 1:
-            current_time_2= performanceClock.getTime()
-            if current_time_2%.04 < .01:
+            current_time_2=performanceClock.getTime()
+            if current_time%time_per_frame<time_per_frame_precision:
                 frame_2+=1
-                if frame_2 >= frames_per_track:
+                if frame_2>=frame_track_end:
                     break
                 # stim pos and mouse pos
-                circle_2=psychopy.visual.Circle(win=win,pos=(stim_pos[frame_2][1],stim_pos[frame_2][2]),color='white',radius=c1_rad,edges=15)
-                circle_3=psychopy.visual.Circle(win=win,pos=(mouse_pos[frame_2][1],mouse_pos[frame_2][2]),color='black',radius=c1_rad/3,edges=3)
+                tgtcircle_2=psychopy.visual.Circle(win=win,pos=(stim_pos[frame_2][1],stim_pos[frame_2][2]),color='white',radius=c1_rad,edges=14)
+                mousecircle_2=psychopy.visual.Circle(win=win,pos=(mouse_pos[frame_2][1],mouse_pos[frame_2][2]),color='black',radius=c1_rad/3,edges=3)
                 # fps & trial details text
                 text_frame=psychopy.visual.TextStim(win=win,
                     name='text',text='frame'+str(frame_2),pos=(.5,.38),
@@ -231,24 +256,36 @@ for block in range(numblocks):
                     color='white',height=.02)
                 # then draw all stimuli
                 text.draw()
-                circle_2.draw()
-                circle_3.draw()
+                tgtcircle_2.draw()
+                mousecircle_2.draw()
                 text_frame.draw()
                 text_stim_pos.draw()
                 text_mouse_pos.draw()
                 # then flip your window
                 win.flip()
-        #%% Save data WIP!!!
-        if current_trial == 1:
-            block_data = [current_block]
-            trial_data = [current_trial]
-            stim_pos_data = [[current_block, current_trial, stim_pos]]
-            mouse_pos_data = [[current_block, current_trial, mouse_pos]]
+        #%% Save data!
+        # To access position data per trial:
+        # xxxx_pos_data[block][trial][timepoint]
+        if current_trial==1:
+            data_block=[current_block]
+            data_trial=[current_trial]
+            data_current_cue_dur=[current_cue_dur]
+            data_current_track_dur=[current_track_dur]
+            data_time_cue_start=[time_cue_start]
+            data_time_track_start=[time_track_start]
+            data_time_track_end=[time_track_end]
+            data_stim_pos = [[current_block,current_trial,stim_pos]]
+            data_mouse_pos = [[current_block,current_trial,mouse_pos]]
         else:
-            block_data.append(current_block)
-            trial_data.append(current_trial)
-            stim_pos_data.append([current_block, current_trial, stim_pos])
-            mouse_pos_data.append([current_block, current_trial, mouse_pos])
+            data_block.append(current_block)
+            data_trial.append(current_trial)
+            data_current_cue_dur.append(current_cue_dur)
+            data_current_track_dur.append(current_track_dur)
+            data_time_cue_start.append(time_cue_start)
+            data_time_track_start.append(time_track_start)
+            data_time_track_end.append(time_track_end)
+            data_stim_pos.append([current_block,current_trial,stim_pos])
+            data_mouse_pos.append([current_block,current_trial,mouse_pos])
         # WIP
         
 #%% Required clean up
